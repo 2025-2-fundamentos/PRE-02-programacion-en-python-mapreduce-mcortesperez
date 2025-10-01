@@ -2,81 +2,89 @@
 
 # pylint: disable=broad-exception-raised
 
-import fileinput
 import glob
-import os.path
+import os
+import string
 import time
-from itertools import groupby
 
-from toolz.itertoolz import concat, pluck
-
-
-
-def copy_raw_files_to_input_folder(n):
-    """Generate n copies of the raw files in the input folder"""
-
+# Crea la carpeta files/input
+if os.path.exists("files/input/"):
+    for file in glob.glob("files/input/*"):
+        os.remove(file)
+else:
+    os.makedirs("files/input")
 
 
-def load_input(input_directory):
-    """Funcion load_input"""
+# Crea n copias de cada uno de los archivos en files/raw/
+n = 5000
+
+for file in glob.glob("files/raw/*"):
+
+    with open(file, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    for i in range(1, n + 1):
+        raw_filename_with_extension = os.path.basename(file)
+        raw_filename_without_extension = os.path.splitext(raw_filename_with_extension)[
+            0
+        ]
+        new_filename = f"{raw_filename_without_extension}_{i}.txt"
+        with open(f"files/input/{new_filename}", "w", encoding="utf-8") as f2:
+            f2.write(text)
 
 
-def preprocess_line(x):
-    """Preprocess the line x"""
+# El experimento realmente empieza en este punto.
+start_time = time.time()
 
 
-def map_line(x):
-    pass
-
-def mapper(sequence):
-    """Mapper"""
-
-
-def shuffle_and_sort(sequence):
-    """Shuffle and Sort"""
+# Lee los archivos de files/input
+sequence = []
+files = glob.glob("files/input/*")
+for file in files:
+    with open(file, "r", encoding="utf-8") as f:
+        for line in f:
+            sequence.append((file, line))
 
 
+# Mapea las líneas a pares (palabra, 1). Este es el mapper.
+pairs_sequence = []
+for _, line in sequence:
+    line = line.lower()
+    line = line.translate(str.maketrans("", "", string.punctuation))
+    line = line.replace("\n", "")
+    words = line.split()
+    pairs_sequence.extend((word, 1) for word in words)
 
-def compute_sum_by_group(group):
-    pass
-
-def reducer(sequence):
-    """Reducer"""
-
-
-def create_directory(directory):
-    """Create Output Directory"""
-
-
-def save_output(output_directory, sequence):
-    """Save Output"""
+# Ordena la secuencia de pares por la palabra. Este es el shuffle and sort.
+pairs_sequence = sorted(pairs_sequence)
 
 
-def create_marker(output_directory):
-    """Create Marker"""
+# Reduce la secuencia de pares sumando los valores por cada palabra. Este es el reducer.
+result = []
+for key, value in pairs_sequence:
+    if result and result[-1][0] == key:
+        result[-1] = (key, result[-1][1] + value)
+    else:
+        result.append((key, value))
+
+# Crea la carpeta files/output
+if os.path.exists("files/output/"):
+    for file in glob.glob(f"files/output/*"):
+        os.remove(file)
+else:
+    os.makedirs("files/output")
 
 
-def run_job(input_directory, output_directory):
-    """Job"""
-    sequence = load_input(input_directory)
-    sequence = mapper(sequence)
-    sequence = shuffle_and_sort(sequence)
-    sequence = reducer(sequence)
-    create_directory(output_directory)
-    save_output(output_directory, sequence)
-    create_marker(output_directory)
+# Guarda el resultado en un archivo files/output/part-00000
+with open("files/output/part-00000", "w", encoding="utf-8") as f:
+    for key, value in result:
+        f.write(f"{key}\t{value}\n")
 
 
-if __name__ == "__main__":
+# Crea el archivo _SUCCESS en files/output
+with open("files/output/_SUCCESS", "w", encoding="utf-8") as f:
+    f.write("")
 
-    copy_raw_files_to_input_folder(n=1000)
-
-    start_time = time.time()
-
-    run_job(
-        "files/input",
-        "files/output",
-    )
-
-    end_time = time.time()
-    print(f"Tiempo de ejecución: {end_time - start_time:.2f} segundos")
+# El experimento finaliza aquí.
+end_time = time.time()
+print(f"Tiempo de ejecución: {end_time - start_time:.2f} segundos")
