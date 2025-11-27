@@ -74,20 +74,21 @@ def run_experiment(n, mapper, reducer, raw_dir, input_dir, output_dir):
                 if os.path.isfile(path):
                     os.remove(path)
                 elif os.path.isdir(path):
-                    # remove nested directories and their contents
                     for root, dirs, files in os.walk(path, topdown=False):
                         for name in files:
                             os.remove(os.path.join(root, name))
                         for name in dirs:
                             os.rmdir(os.path.join(root, name))
                     os.rmdir(path)
+
             if remove_dir:
                 try:
                     os.rmdir(directory)
                 except OSError:
-                    # directory may already be removed or not empty; ignore here
                     pass
-        else:
+                return
+
+        if not remove_dir:
             os.makedirs(directory, exist_ok=True)
             
     def create_numbered_files_copies(raw_dir, input_dir, n):
